@@ -1,8 +1,6 @@
-
 import sqlite3
 import sys
-import pyfiglet
-
+import art
 
 # creating db
 
@@ -63,12 +61,6 @@ class GunInfo:
 
 
 def gun_entry_for_market(cur,conn):
-##    print("****GUN SHOP*****")
-##    print("\nMENU")
-##    print("1.Add to selection")
-##    print("2.View Logs")
-##    print("3.Quit")
-##    selection = int(input("Enter a selection: "))
     try:
         maker = input('Enter the maker of the gun: ')
         model_num = int(input('Enter the gun model number (legally required):' ))
@@ -77,11 +69,13 @@ def gun_entry_for_market(cur,conn):
         ammo_type = input('Enter the ammo type of the gun: ')
     except ValueError as e:
         print("Enter the proper value")
+    except sqlite3.IntegrityError:
+        print("Record was not found.")
     finally:
         print("Gun data added.")
     mygun = GunInfo(maker,model_num,description,production_year,ammo_type)
 
-    print(f"\nGun added to market: {mygun.get_maker()}, {mygun.get_model_num()}, {mygun.get_description()}, {mygun.get_production_date()}, {mygun.get_ammo_type()}")
+    print(f"\nGun added to market: Manufactuer:{mygun.get_maker()}, Serial:{mygun.get_model_num()}, Model:{mygun.get_description()}, ProductionDate:{mygun.get_production_date()}, AmmoType:{mygun.get_ammo_type()}")
 
     cur.execute('''INSERT INTO Guns (GunMaker,ModelNum,Description,ProductionDate,AmmoType)
                      VALUES (?,?,?,?,?)''',
@@ -90,30 +84,68 @@ def gun_entry_for_market(cur,conn):
 ##    conn.close()
 
 def viewing_guns_in_stock(conn,cur):
-    cur.execute("SELECT Gunmaker FROM guns")
+##    conn= sqlite3.connect('gunshop.db')
+    cur.execute("SELECT Gunmaker,Description,AmmoType FROM guns")
     gunshop = cur.fetchall()
     print("Gun manufactuers in stock")
     for gun in gunshop:
-        print('\n',gun[0])
-    
+        print('\n','Manufactuer:',gun[0])
+        print('\n','Model:',gun[1])
+        print('\n','Ammotype:',gun[2])
+##    conn.close()
 
+def delete_gun(conn,cur):
+    try:
+        removal = input('Enter gun name to delete: ')
+    except ValueError as e:
+        print("No integer type,enter gun name instead")
+    cur.execute('DELETE FROM guns WHERE GunMaker = ?',(removal,))
+    conn.commit()
+##    conn.close()
+
+def search_filter(conn,cur):
+    try:
+##        conn = sqlit3.connect('gunshop.db')
+        brand_search = input("Enter the criteria to search by[BRAND]: ")
+    except ValueError as e:
+        print("Incorrect value type.")
+    finally:
+        print("Item with matching attributes found.")
+    cur.execute("SELECT GunMaker FROM guns WHERE GunMaker = ?",(brand_search,))
+    result = cur.fetchone()
+##
+##    if result:
+####        print(f'Brand found:{result[0]}')
+####        return result[0]
+##    else:
+##        print('nothing')
+        
+    
+    
+                
     
 def main():
+    from art import text2art
+    Art =text2art("GUNSHOP")
+    print(Art)
     conn,cur = create_table()
-    txt = pyfiglet.figlet_format("GUN SHOP",font = "larry3d")
-    print(txt)
-                                 
     print("****GUN SHOP*****")
     print("\nMENU")
     print("1.Add to selection")
     print("2.View Guns in stock")
-    print("3.Quit")
+    print("3.Delete Gun entries")
+    print("4.Search filter")
+    print("5.Quit")
+    
     selection = int(input("Enter a selection: "))
     if selection  == 1:
         gun_entry_for_market(cur,conn)
     elif selection == 2:
         viewing_guns_in_stock(conn,cur)
     elif selection == 3:
+        delete_gun(conn,cur)
+    elif selection == 4:
+         search_filter(conn,cur)
+    elif selection == 5:
         exit()
 main()
-
